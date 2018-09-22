@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">RSS</string>
+    <string name="rssfeed">http://leopoldomt.com/if1001/g1brasil.xml</string>
+</resources>
