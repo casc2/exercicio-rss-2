@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- "RSS Feed", should always appear as action button -->
+    <item
+        android:id="@+id/action_feed"
+        android:icon="@drawable/outline_rss_feed_white_48dp"
+        android:title="@string/action_feed"
+        android:showAsAction="always"/>
+
+</menu>

@@ -4,6 +4,9 @@ import android.app.Activity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.io.ByteArrayOutputStream
@@ -37,6 +40,25 @@ class MainActivity : Activity() {
             setHasFixedSize(true)
             layoutManager = viewManager
             adapter = viewAdapter
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.action_feed -> {
+            // User chose the "RSS Feed" item, start activity...
+            Log.d("MENU", "Clicou em RSS Feed action")
+            true
+        }
+
+        else -> {
+            // If we got here, the user's action was not recognized.
+            // Invoke the superclass to handle it.
+            super.onOptionsItemSelected(item)
         }
     }
 

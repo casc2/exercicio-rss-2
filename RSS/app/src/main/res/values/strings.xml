@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">RSS</string>
     <string name="rssfeed">http://leopoldomt.com/if1001/g1brasil.xml</string>
-    <string name="action_link">Edit Link</string>
+    <string name="action_feed">RSS Feed</string>
 </resources>
