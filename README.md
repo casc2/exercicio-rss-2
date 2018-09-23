@@ -1,4 +1,4 @@
-# Exercício #3 - RSS parte 2
+﻿# Exercício #3 - RSS parte 2
 
 A ideia deste exercício é aplicar os conceitos de `Service`, `BroadcastReceiver`, `SQLite`, `RecyclerView`, entre outros. 
 
@@ -32,7 +32,7 @@ Para entregar o exercício, responda o [formulário de entrega](https://docs.goo
 
 | Passo | Completou? |
 | ------ | ------ |
-| 9 | **não** |
+| 9 | **sim** |
 | 10 | **não** |
 | 11 | **não** |
 | 12 | **não** |
