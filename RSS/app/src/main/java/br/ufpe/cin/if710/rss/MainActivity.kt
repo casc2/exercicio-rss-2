@@ -1,10 +1,11 @@
 package br.ufpe.cin.if710.rss
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import org.jetbrains.anko.doAsync
@@ -25,6 +26,8 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        PreferenceManager.setDefaultValues(this, R.xml.preferencias, false)
 
         val emptyAdapter: List<ItemRSS> = emptyList()
 
@@ -51,7 +54,7 @@ class MainActivity : Activity() {
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
         R.id.action_feed -> {
             // User chose the "RSS Feed" item, start activity...
-            Log.d("MENU", "Clicou em RSS Feed action")
+            startActivity(Intent(applicationContext, RssFeedPrefActivity::class.java))
             true
         }
 
@@ -64,8 +67,11 @@ class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        // Busca o feed RSS da URL definida em res/values/strings.xml.
-        loadRSS(getString(R.string.rssfeed))
+
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
+
+        // Busca o feed RSS da URL definida pelo usuário ou a padrão definida em res/values/strings.xml.
+        loadRSS(sharedPref.getString("rssfeed", getString(R.string.rssfeed)))
     }
 
     private fun loadRSS(rssFeed: String) {
