@@ -47,6 +47,7 @@ class MainActivity : Activity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        super.onCreateOptionsMenu(menu)
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
@@ -74,14 +75,28 @@ class MainActivity : Activity() {
         loadRSS(sharedPref.getString("rssfeed", getString(R.string.rssfeed)))
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        database.close()
+    }
+
     private fun loadRSS(rssFeed: String) {
         // Faz o carregamento do XML de maneira assíncrona e fora da main thread.
         doAsync {
             val feedXML = getRssFeed(rssFeed)
 
+            // Realiza o parsing do XML e cria o adapter no qual cada matéria é uma objeto do tipo ItemRSS.
+            val parsedFeedXML = ParserRSS.parse(feedXML)
+
+            for (itemRss in parsedFeedXML) {
+                if (database.getItemRSS(itemRss.link) == null) {
+                    database.insertItem(itemRss)
+                }
+            }
+
+            val cursor = database.items
+
             uiThread {
-                // Realiza o parsing do XML e cria o adapter no qual cada matéria é uma objeto do tipo ItemRSS.
-                val parsedFeedXML = ParserRSS.parse(feedXML)
                 viewAdapter = ItemRssAdapter(parsedFeedXML)
 
                 // Atualiza o RecyclerView com o novo adapter na main thread.
