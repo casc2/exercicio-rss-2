@@ -2,12 +2,15 @@ package br.ufpe.cin.if710.rss
 
 import android.app.Activity
 import android.content.Intent
+import android.database.Cursor
+import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import android.support.v4.content.ContextCompat
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.io.ByteArrayOutputStream
@@ -16,12 +19,9 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-// Classe MainActivity portada para Kotlin.
 class MainActivity : Activity() {
-    // Declaração de variáveis necessárias para inicializar o ReciyclerView.
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var viewAdapter: RecyclerView.Adapter<*>
-    private lateinit var viewManager: RecyclerView.LayoutManager
+
+    private var conteudoRSS: ListView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,20 +29,41 @@ class MainActivity : Activity() {
 
         PreferenceManager.setDefaultValues(this, R.xml.preferencias, false)
 
-        val emptyAdapter: List<ItemRSS> = emptyList()
+        conteudoRSS = findViewById(R.id.conteudoRSS)
 
-        // Optar por exibição com linear layout, ao invés de grid layout.
-        viewManager = LinearLayoutManager(this)
+        val adapter = SimpleCursorAdapter(
+                this,
+                R.layout.itemlista,
+                null,
+                arrayOf(SQLiteRSSHelper.ITEM_TITLE, SQLiteRSSHelper.ITEM_DATE),
+                intArrayOf(R.id.item_titulo, R.id.item_data),
+                0
+        )
 
-        // O adapter preenchido com as notícias a serem exibidas só será criado após se obter o response da URL.
-        // Para evitar erro de adapter inexistente, ele é inicializado com uma lista vazia do tipo ItemRSS.
-        viewAdapter = ItemRssAdapter(emptyAdapter)
+        conteudoRSS?.apply {
+            this.adapter = adapter
+            isTextFilterEnabled = true
+            onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                val mAdapter = parent.adapter as SimpleCursorAdapter
+                val mCursor = mAdapter.getItem(position) as Cursor
+                val itemLink = mCursor.getString(mCursor.getColumnIndexOrThrow(SQLiteRSSHelper.ITEM_LINK))
 
-        // Inicializando o RecyclerView com os parâmetros definidos a cima, utilizando o mesmo id do antigo TextView.
-        recyclerView = findViewById<RecyclerView>(R.id.conteudoRSS).apply {
-            setHasFixedSize(true)
-            layoutManager = viewManager
-            adapter = viewAdapter
+                doAsync {
+                    database.markAsRead(itemLink)
+                    Log.d("DB", "Marcando \"$itemLink\" como lido.")
+                }
+
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(itemLink))
+                intent.addCategory(Intent.CATEGORY_DEFAULT)
+                intent.addCategory(Intent.CATEGORY_BROWSABLE)
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    ContextCompat.startActivity(context, intent, null)
+                } else {
+                    Toast.makeText(context,
+                            "Não foi possível abrir o link: navegador compatível não encontrado",
+                            Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 
@@ -91,18 +112,16 @@ class MainActivity : Activity() {
             for (itemRss in parsedFeedXML) {
                 if (database.getItemRSS(itemRss.link) == null) {
                     database.insertItem(itemRss)
+                    Log.d("DB", "Inserindo \"${itemRss.link}\" no banco.")
                 }
             }
 
             val cursor = database.items
 
-            uiThread {
-                viewAdapter = ItemRssAdapter(parsedFeedXML)
+            Log.d("DB", cursor.count.toString())
 
-                // Atualiza o RecyclerView com o novo adapter na main thread.
-                recyclerView.apply {
-                    adapter = viewAdapter
-                }
+            uiThread {
+                (conteudoRSS?.adapter as CursorAdapter).changeCursor(cursor)
             }
         }
     }

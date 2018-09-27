@@ -9,13 +9,13 @@ import android.database.sqlite.SQLiteOpenHelper
 
 class SQLiteRSSHelper private constructor(c: Context) : SQLiteOpenHelper(c, DATABASE_NAME, null, DB_VERSION) {
 
-    val items: Cursor?
+    val items: Cursor
         @Throws(SQLException::class)
         get() {
             val db = readableDatabase
             val projection = columns
             val selection = "$ITEM_UNREAD = ?"
-            val selectionArgs = arrayOf("true")
+            val selectionArgs = arrayOf("1")
 
             return db.query(
                     DATABASE_TABLE,
@@ -64,7 +64,7 @@ class SQLiteRSSHelper private constructor(c: Context) : SQLiteOpenHelper(c, DATA
         val selection = "$ITEM_LINK = ?"
         val selectionArgs = arrayOf(link)
 
-        val cursor : Cursor? =  db.query(
+        val cursor : Cursor =  db.query(
             DATABASE_TABLE,
             projection,
             selection,
@@ -74,7 +74,7 @@ class SQLiteRSSHelper private constructor(c: Context) : SQLiteOpenHelper(c, DATA
             null
         )
 
-        with(cursor!!) {
+        with(cursor) {
             if(moveToNext()) {
                 itemRSS = ItemRSS(
                         getString(getColumnIndexOrThrow(ITEM_TITLE)),
@@ -144,11 +144,11 @@ class SQLiteRSSHelper private constructor(c: Context) : SQLiteOpenHelper(c, DATA
 
         //Definindo constantes que representam os campos do banco de dados
         private const val ITEM_ROWID = RssProviderContract._ID
-        private const val ITEM_TITLE = RssProviderContract.TITLE
-        private const val ITEM_DATE = RssProviderContract.DATE
-        private const val ITEM_DESC = RssProviderContract.DESCRIPTION
-        private const val ITEM_LINK = RssProviderContract.LINK
-        private const val ITEM_UNREAD = RssProviderContract.UNREAD
+        const val ITEM_TITLE = RssProviderContract.TITLE
+        const val ITEM_DATE = RssProviderContract.DATE
+        const val ITEM_DESC = RssProviderContract.DESCRIPTION
+        const val ITEM_LINK = RssProviderContract.LINK
+        const val ITEM_UNREAD = RssProviderContract.UNREAD
 
         //Definindo constante que representa um array com todos os campos
         val columns = arrayOf(ITEM_ROWID, ITEM_TITLE, ITEM_DATE, ITEM_DESC, ITEM_LINK, ITEM_UNREAD)

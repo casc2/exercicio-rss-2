@@ -33,8 +33,8 @@ Para entregar o exercício, responda o [formulário de entrega](https://docs.goo
 | Passo | Completou? |
 | ------ | ------ |
 | 9 | **sim** |
-| 10 | **não** |
-| 11 | **não** |
+| 10 | **sim** |
+| 11 | **sim** |
 | 12 | **não** |
 | 13 | **não** |
 | 14 | **não** |
