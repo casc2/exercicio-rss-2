@@ -1,29 +1,32 @@
 package br.ufpe.cin.if710.rss
 
 import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.v4.content.ContextCompat
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.*
 import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.uiThread
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
+import android.content.IntentFilter
+import android.util.Log
+import android.os.AsyncTask
+
+
 
 class MainActivity : Activity() {
 
-    private var conteudoRSS: ListView? = null
+    var conteudoRSS: ListView? = null
+    private val intentFilter = IntentFilter(RSSPullService.ACTION_UPDATE_RSS_FEED)
+    private val broadcastReceiver = DynamicReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("DEBUG", "Entrando no OnCreate")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -43,14 +46,13 @@ class MainActivity : Activity() {
         conteudoRSS?.apply {
             this.adapter = adapter
             isTextFilterEnabled = true
-            onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            onItemClickListener = AdapterView.OnItemClickListener { parent, _, position, _ ->
                 val mAdapter = parent.adapter as SimpleCursorAdapter
                 val mCursor = mAdapter.getItem(position) as Cursor
                 val itemLink = mCursor.getString(mCursor.getColumnIndexOrThrow(SQLiteRSSHelper.ITEM_LINK))
 
                 doAsync {
                     database.markAsRead(itemLink)
-                    Log.d("DB", "Marcando \"$itemLink\" como lido.")
                 }
 
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(itemLink))
@@ -88,12 +90,22 @@ class MainActivity : Activity() {
     }
 
     override fun onStart() {
+        Log.d("DEBUG", "Entrando no OnStart")
+
         super.onStart()
 
-        val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
+        Log.d("DEBUG", "Registrando broadcast...")
+        registerReceiver(broadcastReceiver, intentFilter)
 
-        // Busca o feed RSS da URL definida pelo usuário ou a padrão definida em res/values/strings.xml.
-        loadRSS(sharedPref.getString("rssfeed", getString(R.string.rssfeed)))
+        val serviceIntent = Intent(applicationContext, RSSPullService::class.java)
+        Log.d("DEBUG", "Iniciando o service...")
+        startService(serviceIntent)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("DEBUG", "Removendo o registro...")
+        unregisterReceiver(broadcastReceiver)
     }
 
     override fun onDestroy() {
@@ -101,51 +113,27 @@ class MainActivity : Activity() {
         database.close()
     }
 
-    private fun loadRSS(rssFeed: String) {
-        // Faz o carregamento do XML de maneira assíncrona e fora da main thread.
-        doAsync {
-            val feedXML = getRssFeed(rssFeed)
+    class DynamicReceiver : BroadcastReceiver() {
 
-            // Realiza o parsing do XML e cria o adapter no qual cada matéria é uma objeto do tipo ItemRSS.
-            val parsedFeedXML = ParserRSS.parse(feedXML)
-
-            for (itemRss in parsedFeedXML) {
-                if (database.getItemRSS(itemRss.link) == null) {
-                    database.insertItem(itemRss)
-                    Log.d("DB", "Inserindo \"${itemRss.link}\" no banco.")
-                }
-            }
-
-            val cursor = database.items
-
-            Log.d("DB", cursor.count.toString())
-
-            uiThread {
-                (conteudoRSS?.adapter as CursorAdapter).changeCursor(cursor)
-            }
+        override fun onReceive(context: Context, intent: Intent) {
+            Log.d("DEBUG", "Broadcast recebido")
+            val mainActivity = MainActivity()
+//            mainActivity.ExibirFeed().execute()
         }
     }
 
-    @Throws(IOException::class)
-    private fun getRssFeed(feed: String): String {
-        var `in`: InputStream? = null
-        val rssFeed: String
-        try {
-            val url = URL(feed)
-            val conn = url.openConnection() as HttpURLConnection
-            `in` = conn.inputStream
-            val out = ByteArrayOutputStream()
-            val buffer = ByteArray(1024)
-            var count = `in`!!.read(buffer)
-            while (count != -1) {
-                out.write(buffer, 0, count)
-                count = `in`.read(buffer)
-            }
-            val response = out.toByteArray()
-            rssFeed = String(response, charset("UTF-8"))
-        } finally {
-            `in`?.close()
+    internal inner class ExibirFeed : AsyncTask<Void, Void, Cursor>() {
+
+        override fun doInBackground(vararg voids: Void): Cursor {
+            val c = database.items
+            c.count
+            return c
         }
-        return rssFeed
+
+        override fun onPostExecute(c: Cursor?) {
+            if (c != null) {
+                (conteudoRSS?.adapter as CursorAdapter).changeCursor(c)
+            }
+        }
     }
 }
