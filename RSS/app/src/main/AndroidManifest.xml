@@ -36,6 +36,15 @@
             android:enabled="true"
             android:exported="false" />
 
+        <receiver
+            android:name=".MainActivity$StaticReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="br.ufpe.cin.if710.rss.ACTION_SEND_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

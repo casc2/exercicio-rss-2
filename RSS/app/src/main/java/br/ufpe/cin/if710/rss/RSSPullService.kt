@@ -15,6 +15,8 @@ import java.net.URL
  */
 class RSSPullService : IntentService("RSSPullService") {
 
+    var hasNews = false
+
     override fun onHandleIntent(intent: Intent) {
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -27,12 +29,17 @@ class RSSPullService : IntentService("RSSPullService") {
         persistItemsOnDatabase(parsedFeedXML)
 
         sendBroadcast(Intent(ACTION_UPDATE_RSS_FEED))
+
+        if (hasNews) {
+            sendBroadcast(Intent(ACTION_SEND_NOTIFICATION))
+        }
     }
 
     private fun persistItemsOnDatabase(parsedFeedXML : List<ItemRSS>) {
         for (itemRss in parsedFeedXML) {
             if (database.getItemRSS(itemRss.link) == null) {
                 database.insertItem(itemRss)
+                hasNews = true
             }
         }
     }
@@ -62,6 +69,7 @@ class RSSPullService : IntentService("RSSPullService") {
     }
 
     companion object {
-        const val ACTION_UPDATE_RSS_FEED = "br.ufpe.cin.if710.rss.action.UPDATE_RSS_FEED"
+        const val ACTION_UPDATE_RSS_FEED = "br.ufpe.cin.if710.rss.UPDATE_RSS_FEED"
+        const val ACTION_SEND_NOTIFICATION = "br.ufpe.cin.if710.rss.ACTION_SEND_NOTIFICATION"
     }
 }
