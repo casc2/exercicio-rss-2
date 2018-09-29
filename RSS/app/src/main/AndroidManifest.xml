@@ -34,12 +34,12 @@
         <service
             android:name=".RSSPullService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="true" />
 
         <receiver
-            android:name=".MainActivity$StaticReceiver"
+            android:name=".StaticReceiver"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="br.ufpe.cin.if710.rss.ACTION_SEND_NOTIFICATION" />
             </intent-filter>

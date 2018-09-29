@@ -3,6 +3,7 @@ package br.ufpe.cin.if710.rss
 import android.app.IntentService
 import android.content.Intent
 import android.preference.PreferenceManager
+import org.xmlpull.v1.XmlPullParserException
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -22,11 +23,15 @@ class RSSPullService : IntentService("RSSPullService") {
 
         // Baixando o feed RSS a partir do endereço URL configurada pelo usuário se existente.
         // Do contrário, carrega a partir do endereço padrão definido em strings.xml.
-        val feedXML = getRssFeed(sharedPref.getString("rssfeed", getString(R.string.rssfeed)))
-
-        val parsedFeedXML = ParserRSS.parse(feedXML)
-
-        persistItemsOnDatabase(parsedFeedXML)
+        try {
+            val feedXML = getRssFeed(sharedPref.getString("rssfeed", getString(R.string.rssfeed)))
+            val parsedFeedXML = ParserRSS.parse(feedXML)
+            persistItemsOnDatabase(parsedFeedXML)
+        } catch (e: XmlPullParserException){
+            e.printStackTrace()
+        } catch (e: IOException){
+            e.printStackTrace()
+        }
 
         sendBroadcast(Intent(ACTION_UPDATE_RSS_FEED))
 
