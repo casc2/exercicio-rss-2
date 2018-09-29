@@ -14,25 +14,21 @@ import android.view.MenuItem
 import android.widget.*
 import org.jetbrains.anko.doAsync
 import android.content.IntentFilter
-import android.util.Log
-import android.os.AsyncTask
-
-
+import org.jetbrains.anko.uiThread
 
 class MainActivity : Activity() {
 
     var conteudoRSS: ListView? = null
-    private val intentFilter = IntentFilter(RSSPullService.ACTION_UPDATE_RSS_FEED)
-    private val broadcastReceiver = DynamicReceiver()
+    private var broadcastReceiver: DynamicReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.d("DEBUG", "Entrando no OnCreate")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         PreferenceManager.setDefaultValues(this, R.xml.preferencias, false)
 
         conteudoRSS = findViewById(R.id.conteudoRSS)
+        broadcastReceiver = DynamicReceiver()
 
         val adapter = SimpleCursorAdapter(
                 this,
@@ -90,21 +86,17 @@ class MainActivity : Activity() {
     }
 
     override fun onStart() {
-        Log.d("DEBUG", "Entrando no OnStart")
-
         super.onStart()
 
-        Log.d("DEBUG", "Registrando broadcast...")
+        val intentFilter = IntentFilter(RSSPullService.ACTION_UPDATE_RSS_FEED)
         registerReceiver(broadcastReceiver, intentFilter)
 
-        val serviceIntent = Intent(applicationContext, RSSPullService::class.java)
-        Log.d("DEBUG", "Iniciando o service...")
+        val serviceIntent = Intent(this, RSSPullService::class.java)
         startService(serviceIntent)
     }
 
     override fun onStop() {
         super.onStop()
-        Log.d("DEBUG", "Removendo o registro...")
         unregisterReceiver(broadcastReceiver)
     }
 
@@ -113,26 +105,15 @@ class MainActivity : Activity() {
         database.close()
     }
 
-    class DynamicReceiver : BroadcastReceiver() {
+    inner class DynamicReceiver : BroadcastReceiver() {
 
         override fun onReceive(context: Context, intent: Intent) {
-            Log.d("DEBUG", "Broadcast recebido")
-            val mainActivity = MainActivity()
-//            mainActivity.ExibirFeed().execute()
-        }
-    }
+            doAsync {
+                val cursor = database.items
 
-    internal inner class ExibirFeed : AsyncTask<Void, Void, Cursor>() {
-
-        override fun doInBackground(vararg voids: Void): Cursor {
-            val c = database.items
-            c.count
-            return c
-        }
-
-        override fun onPostExecute(c: Cursor?) {
-            if (c != null) {
-                (conteudoRSS?.adapter as CursorAdapter).changeCursor(c)
+                uiThread {
+                    (conteudoRSS?.adapter as CursorAdapter).changeCursor(cursor)
+                }
             }
         }
     }

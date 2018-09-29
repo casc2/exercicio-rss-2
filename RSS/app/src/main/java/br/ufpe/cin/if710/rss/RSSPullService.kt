@@ -3,7 +3,6 @@ package br.ufpe.cin.if710.rss
 import android.app.IntentService
 import android.content.Intent
 import android.preference.PreferenceManager
-import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -19,25 +18,20 @@ class RSSPullService : IntentService("RSSPullService") {
     override fun onHandleIntent(intent: Intent) {
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
 
-        Log.d("DEBUG", "Buscando Feed...")
         // Baixando o feed RSS a partir do endereço URL configurada pelo usuário se existente.
         // Do contrário, carrega a partir do endereço padrão definido em strings.xml.
         val feedXML = getRssFeed(sharedPref.getString("rssfeed", getString(R.string.rssfeed)))
-        Log.d("DEBUG", "Feed: $feedXML")
 
-        Log.d("DEBUG", "Fazendo o Parser")
         val parsedFeedXML = ParserRSS.parse(feedXML)
+
         persistItemsOnDatabase(parsedFeedXML)
 
-        Log.d("DEBUG", "Enviando broadcast...")
         sendBroadcast(Intent(ACTION_UPDATE_RSS_FEED))
     }
 
     private fun persistItemsOnDatabase(parsedFeedXML : List<ItemRSS>) {
-        Log.d("DEBUG", "Começando a persitir os itens...")
         for (itemRss in parsedFeedXML) {
             if (database.getItemRSS(itemRss.link) == null) {
-                Log.d("DEBUG", "Adicionando item")
                 database.insertItem(itemRss)
             }
         }
